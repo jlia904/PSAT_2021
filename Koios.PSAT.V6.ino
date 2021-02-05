@@ -548,6 +548,8 @@ void setup() {
   // make this baud rate fast enough to we aren't waiting on it
   Serial.begin(115200);
 
+  while (!Serial);
+
   // 9600 baud is the default rate for the Ultimate GPS
   GPSSerial.begin(9600);
 
@@ -607,11 +609,10 @@ void setup() {
   // *****************************************************************************
   // End of LSM6DS33_LIS3MDL_9DOF initialisation
   // *****************************************************************************
-
+  Serial.println("Finished setup");
 }
 
 void loop() {
-
   DateTime now = rtc.now();
 
   //VOLTAGE ADDITION
@@ -621,7 +622,6 @@ void loop() {
   //temp and pressure read
   tempC = bmp.readTemperature();
   pressure = bmp.readPressure();
-  altitude = bmp.readAltitude(1013.25);
 
 
   sensors_event_t accel, gyro, mag, temp_unused;
@@ -640,110 +640,111 @@ void loop() {
   ymag = mag.magnetic.y;
   zmag = mag.magnetic.z;
 
-  if (!altset) {
-    basealt = altitude;
+  if (!altset && data.GPS_Quality_Indicator != 0) {
+    basealt = data.Altitude / 10;
     altset = true;
   }
-  altitude = altitude - basealt;
-  Serial.println(altitude);//..........................................................................................
+  altitude = data.Altitude / 10 - basealt;
 
+  Serial.println(data.Altitude);
+  Serial.println(basealt);
+  Serial.println(altitude);
+  Serial.println("");
 
-  if (altitude > 0.5) { //make this 10 metres for actual launch
+  if (altitude > 10) { //make this 10 metres for actual launch
     flight = true;
   }
 
+  //    dataFile = SD.open("gpsdata.txt", FILE_WRITE);
+  //    dataFile.print(now.hour(), DEC);
+  //    dataFile.print(':');
+  //    dataFile.print(now.minute(), DEC);
+  //    dataFile.print(':');
+  //    dataFile.println(now.second(), DEC);
+  //    while (GPSSerial.available()) {
+  //      char c = GPSSerial.read();
+  //      dataFile.print(c);
+  //      //Serial.print(c);
+  //    }
+  //    dataFile.close();
 
+  //GPS sentence parsing
+  state = UNKNOWN_STATE;
+
+  //Parse 200 data fields
+  for (int i = 0; i < 200; i++) {
+    parse_gps_data(&state, &type, &idx, &field, &sequence, buffer, &data);
+  }
+
+  dataFile = SD.open("gpsdata.txt", FILE_WRITE);
+  dataFile.println(data.UTC_Time);
+  dataFile.println(data.Latitude);
+  dataFile.println(data.NS_Indicator);
+  dataFile.println(data.Longitude);
+  dataFile.println(data.EW_Indicator);
+  dataFile.println(data.GPS_Quality_Indicator);
+  dataFile.println(data.Altitude);
+  dataFile.println(data.Satellites_In_View);
+  dataFile.println(data.Satellite_1_ID);
+  dataFile.println(data.Satellite_1_SNR);
+  dataFile.println(data.Satellite_2_ID);
+  dataFile.println(data.Satellite_2_SNR);
+  dataFile.println(data.Satellite_3_ID);
+  dataFile.println(data.Satellite_3_SNR);
+  dataFile.println(data.Satellite_4_ID);
+  dataFile.println(data.Satellite_4_SNR);
+  dataFile.println(data.Satellite_5_ID);
+  dataFile.println(data.Satellite_5_SNR);
+  dataFile.println(data.Satellite_6_ID);
+  dataFile.println(data.Satellite_6_SNR);
+  dataFile.println(data.Satellite_7_ID);
+  dataFile.println(data.Satellite_7_SNR);
+  dataFile.println(data.Satellite_8_ID);
+  dataFile.println(data.Satellite_8_SNR);
+  dataFile.println(data.Satellite_9_ID);
+  dataFile.println(data.Satellite_9_SNR);
+  dataFile.println(data.Satellite_10_ID);
+  dataFile.println(data.Satellite_10_SNR);
+  dataFile.println(data.Satellite_11_ID);
+  dataFile.println(data.Satellite_11_SNR);
+  dataFile.println(data.Satellite_12_ID);
+  dataFile.println(data.Satellite_12_SNR);
+  dataFile.println(data.Course_Over_Ground);
+  dataFile.println(data.Speed_Over_Ground_Kmh);
+  dataFile.println("");
+  dataFile.close();
+
+  //SD writing
+  myFile = SD.open("data2.txt" , FILE_WRITE );
+  if (myFile) {
+    myFile.print(now.hour(), DEC);
+    myFile.print(':');
+    myFile.print(now.minute(), DEC);
+    myFile.print(':');
+    myFile.println(now.second(), DEC);
+    myFile.print("Temperature = ");
+    myFile.println(tempC);
+    myFile.print("Pressure = ");
+    myFile.println(pressure);
+    myFile.print(" Altitude = ");
+    myFile.println(altitude);
+    myFile.printf("ACCEL X: %f Y: %f Z: %f", xaccel, yaccel, zaccel);
+    myFile.println(" ");
+    myFile.printf("MAG X: %f Y: %f Z: %f", xmag, ymag, zmag);
+    myFile.println(" ");
+    myFile.printf("GYRO X: %f Y: %f Z: %f", xgyro, ygyro, zgyro);
+    myFile.println();
+
+    //VOLTAGE ADDITION
+    myFile.print("Voltage = ");
+    myFile.println(voltage);
+    myFile.close();
+  }
 
   if (flight) {
-    Serial.println("in flight");//.........................................................................................
-    //    dataFile = SD.open("gpsdata.txt", FILE_WRITE);
-    //    dataFile.print(now.hour(), DEC);
-    //    dataFile.print(':');
-    //    dataFile.print(now.minute(), DEC);
-    //    dataFile.print(':');
-    //    dataFile.println(now.second(), DEC);
-    //    while (GPSSerial.available()) {
-    //      char c = GPSSerial.read();
-    //      dataFile.print(c);
-    //      //Serial.print(c);
-    //    }
-    //    dataFile.close();
-
-    //GPS sentence parsing
-    state = UNKNOWN_STATE;
-
-    //Parse 200 data fields
-    for (int i = 0; i < 200; i++) {
-      parse_gps_data(&state, &type, &idx, &field, &sequence, buffer, &data);
-    }
-
-    dataFile = SD.open("gpsdata.txt", FILE_WRITE);
-    dataFile.println(data.UTC_Time);
-    dataFile.println(data.Latitude);
-    dataFile.println(data.NS_Indicator);
-    dataFile.println(data.Longitude);
-    dataFile.println(data.EW_Indicator);
-    dataFile.println(data.GPS_Quality_Indicator);
-    dataFile.println(data.Altitude);
-    dataFile.println(data.Satellites_In_View);
-    dataFile.println(data.Satellite_1_ID);
-    dataFile.println(data.Satellite_1_SNR);
-    dataFile.println(data.Satellite_2_ID);
-    dataFile.println(data.Satellite_2_SNR);
-    dataFile.println(data.Satellite_3_ID);
-    dataFile.println(data.Satellite_3_SNR);
-    dataFile.println(data.Satellite_4_ID);
-    dataFile.println(data.Satellite_4_SNR);
-    dataFile.println(data.Satellite_5_ID);
-    dataFile.println(data.Satellite_5_SNR);
-    dataFile.println(data.Satellite_6_ID);
-    dataFile.println(data.Satellite_6_SNR);
-    dataFile.println(data.Satellite_7_ID);
-    dataFile.println(data.Satellite_7_SNR);
-    dataFile.println(data.Satellite_8_ID);
-    dataFile.println(data.Satellite_8_SNR);
-    dataFile.println(data.Satellite_9_ID);
-    dataFile.println(data.Satellite_9_SNR);
-    dataFile.println(data.Satellite_10_ID);
-    dataFile.println(data.Satellite_10_SNR);
-    dataFile.println(data.Satellite_11_ID);
-    dataFile.println(data.Satellite_11_SNR);
-    dataFile.println(data.Satellite_12_ID);
-    dataFile.println(data.Satellite_12_SNR);
-    dataFile.println(data.Course_Over_Ground);
-    dataFile.println(data.Speed_Over_Ground_Kmh);
-    dataFile.println("");
-    dataFile.close();
-
-    //SD writing
-    myFile = SD.open("data2.txt" , FILE_WRITE );
-    if (myFile) {
-      myFile.print(now.hour(), DEC);
-      myFile.print(':');
-      myFile.print(now.minute(), DEC);
-      myFile.print(':');
-      myFile.println(now.second(), DEC);
-      myFile.print("Temperature = ");
-      myFile.println(tempC);
-      myFile.print("Pressure = ");
-      myFile.println(pressure);
-      myFile.print(" Altitude = ");
-      myFile.println(altitude);
-      myFile.printf("ACCEL X: %f Y: %f Z: %f", xaccel, yaccel, zaccel);
-      myFile.println(" ");
-      myFile.printf("MAG X: %f Y: %f Z: %f", xmag, ymag, zmag);
-      myFile.println(" ");
-      myFile.printf("GYRO X: %f Y: %f Z: %f", xgyro, ygyro, zgyro);
-      myFile.println();
-
-      //VOLTAGE ADDITION
-      myFile.print("Voltage = ");
-      myFile.println(voltage);
-      myFile.close();
-
-    }
-
+    Serial.println("in flight");
   }
+
   if (flight && (prevalt > altitude)) {
     if ((altitude < 1.5) && !photo500) {
       Serial.println("photo500");
