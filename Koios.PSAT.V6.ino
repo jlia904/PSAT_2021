@@ -549,7 +549,7 @@ void setup() {
   Serial.begin(115200);
 
   while (!Serial);
-
+  
   // 9600 baud is the default rate for the Ultimate GPS
   GPSSerial.begin(9600);
 
@@ -622,7 +622,7 @@ void loop() {
   //temp and pressure read
   tempC = bmp.readTemperature();
   pressure = bmp.readPressure();
-
+  altitude = bmp.readAltitude(1013.25);
 
   sensors_event_t accel, gyro, mag, temp_unused;
 
@@ -640,13 +640,12 @@ void loop() {
   ymag = mag.magnetic.y;
   zmag = mag.magnetic.z;
 
-  if (!altset && data.GPS_Quality_Indicator != 0) {
-    basealt = data.Altitude / 10;
+  if (!altset) {
+    basealt = altitude;
     altset = true;
   }
-  altitude = data.Altitude / 10 - basealt;
+  altitude = altitude - basealt;
 
-  Serial.println(data.Altitude);
   Serial.println(basealt);
   Serial.println(altitude);
   Serial.println("");
@@ -743,6 +742,9 @@ void loop() {
 
   if (flight) {
     Serial.println("in flight");
+  }
+  else {
+    Serial.println("NOT in flight");
   }
 
   if (flight && (prevalt > altitude)) {
