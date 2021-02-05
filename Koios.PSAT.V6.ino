@@ -569,6 +569,9 @@ void setup() {
   pinMode(trig, OUTPUT);
   digitalWrite(trig, HIGH);
 
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
+
   //VOLTAGE ADDITION
   pinMode(voltPin, INPUT);
 
@@ -646,7 +649,7 @@ void loop() {
   Serial.println(altitude);
   Serial.println("");
 
-  if (altitude > 2) { //make this 10 metres for actual launch
+  if (altitude > 1.8) { //make this 10 metres for actual launch
     flight = true;
   }
 
@@ -738,18 +741,19 @@ void loop() {
 
   if (flight) {
     Serial.println("in flight");
+    digitalWrite(13, HIGH);
   }
   else {
     Serial.println("NOT in flight");
   }
 
   if (flight && (prevalt > altitude)) {
-    if ((altitude < 1.8) && !photo500) {
+    if ((altitude < 1.5) && !photo500) {
       Serial.println("photo500");
       takephoto();
       photo500 = true;
     }
-    if ((altitude < 1.1 ) && !photo300) {
+    if ((altitude < 1.0 ) && !photo300) {
       Serial.println("photo300");
       takephoto();
       photo300 = true;
@@ -792,7 +796,7 @@ void takevideo() {
   digitalWrite(trig, LOW);
   delay(1000);
   digitalWrite(trig, HIGH);
-  delay(10000);
+  delay(20000);
   digitalWrite(trig, LOW);
   delay(1000);
   digitalWrite(trig, HIGH);
