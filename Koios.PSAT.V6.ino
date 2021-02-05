@@ -41,6 +41,7 @@ float altdiff;
 int count = 0;
 bool photo500 = false;
 bool photo300 = false;
+bool video_taken = false;
 int video = 0;
 float xaccel;
 float yaccel;
@@ -556,11 +557,7 @@ void setup() {
   if (!bmp.begin()) {
     while (1);
   }
-  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-                  Adafruit_BMP280::STANDBY_MS_500);
+  bmp.setSampling();
 
   if (!SD.begin(10)) {
     while (1);
@@ -757,9 +754,10 @@ void loop() {
       takephoto();
       photo300 = true;
     }
-    if (altitude < 0.3) {
+    if (altitude < 0.3 && !video_taken) {
         Serial.println("video30");
         takevideo();
+        video_taken = true;
     }
 
   }
@@ -790,13 +788,12 @@ void takephoto() {
   digitalWrite(trig, HIGH);
   delay(1000);
 }
-
 void takevideo() {
   digitalWrite(trig, LOW);
-  delay(500);
+  delay(1000);
   digitalWrite(trig, HIGH);
   delay(10000);
   digitalWrite(trig, LOW);
-  delay(500);
+  delay(1000);
   digitalWrite(trig, HIGH);
 }
