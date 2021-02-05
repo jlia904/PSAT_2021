@@ -543,12 +543,10 @@ uint8_t sequence = 0;
 
 void setup() {
 
-  //while (!Serial);....................................................................................
-
   // make this baud rate fast enough to we aren't waiting on it
   Serial.begin(115200);
 
-  while (!Serial);
+  //while (!Serial);
   
   // 9600 baud is the default rate for the Ultimate GPS
   GPSSerial.begin(9600);
