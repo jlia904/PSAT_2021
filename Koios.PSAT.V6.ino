@@ -41,7 +41,6 @@ float altdiff;
 int count = 0;
 bool photo500 = false;
 bool photo300 = false;
-bool recording = false;
 int video = 0;
 float xaccel;
 float yaccel;
@@ -623,7 +622,7 @@ void loop() {
   tempC = bmp.readTemperature();
   pressure = bmp.readPressure();
   altitude = bmp.readAltitude(1013.25);
-
+  Serial.println(altitude);
   sensors_event_t accel, gyro, mag, temp_unused;
 
   //  /* Get new normalized sensor events */
@@ -650,7 +649,7 @@ void loop() {
   Serial.println(altitude);
   Serial.println("");
 
-  if (altitude > 10) { //make this 10 metres for actual launch
+  if (altitude > 2) { //make this 10 metres for actual launch
     flight = true;
   }
 
@@ -748,31 +747,21 @@ void loop() {
   }
 
   if (flight && (prevalt > altitude)) {
-    if ((altitude < 1.5) && !photo500) {
+    if ((altitude < 1.8) && !photo500) {
       Serial.println("photo500");
       takephoto();
       photo500 = true;
     }
-    if ((altitude < 1.0 ) && !photo300) {
+    if ((altitude < 1.1 ) && !photo300) {
       Serial.println("photo300");
       takephoto();
       photo300 = true;
-      delay(500);
-      digitalWrite(trig, LOW);
     }
-    if ((altitude < 0.8 ) && !recording) {
-      if (video == 0) {
+    if (altitude < 0.3) {
         Serial.println("video30");
         takevideo();
-        recording = true;
-      }
     }
 
-  }
-  if (recording && !flight) {
-    takevideo();
-    recording = false;
-    video++;
   }
 
   //  // stopping sequence
@@ -799,10 +788,15 @@ void takephoto() {
   digitalWrite(trig, LOW);
   delay(50);
   digitalWrite(trig, HIGH);
+  delay(1000);
 }
 
 void takevideo() {
-  digitalWrite(trig, HIGH);
-  delay(50);
   digitalWrite(trig, LOW);
+  delay(500);
+  digitalWrite(trig, HIGH);
+  delay(10000);
+  digitalWrite(trig, LOW);
+  delay(500);
+  digitalWrite(trig, HIGH);
 }
